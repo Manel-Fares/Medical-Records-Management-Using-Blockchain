@@ -12,13 +12,13 @@
 ### Step 1 : Installing the prerequisites
 
 The following are prerequisites for installing the required development tools:
-*	Operating Systems : Ubuntu Linux 14.04 / 16.04 LTS (both 64-bit)
+*	Operating Systems : Ubuntu Linux 64-bits
 *	Docker : v17.03 or higher
 *	Docker-compose : v1.13.0 or higher
 *	Npm : v5.x
-*	node.js : v8.9.1 or higher (note version 9 is not supported)
+*	node.js : v8.9.1 or higher 
 *	Python : 2.7x
-*	A code editor (VSCode is recommanded)
+*	A code editor 
 
 ### You can download the prerequisites using the following commands:
 ```
