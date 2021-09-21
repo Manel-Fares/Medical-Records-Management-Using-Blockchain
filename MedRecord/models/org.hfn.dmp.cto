@@ -1,0 +1,141 @@
+
+namespace org.hfn.dmp
+participant Medecin identified by ID_Medecin{
+  o String ID_Medecin
+}
+
+participant Patient identified by ID_Patient {
+  o String ID_Patient
+  o String[] autorisation_consultation
+  o String[] autorisation_Examen
+  o String[] Autorisation_DMP
+  
+}
+
+abstract asset Profil identified by ID {
+  o String ID
+  o String Nom
+  o String Prenom
+  o String Date_de_naissance regex=/[0-9]{2}-[0-9]{2}-[0-9]{4}/
+  o String adresse
+  o String Num_mobile optional
+  o String Email regex=/[a-z0-9.-]+@[a-z0-9.]+/
+}
+
+asset Profil_Medecin extends Profil  {
+  --> Medecin medecin
+  o String department
+  o String specialite
+
+}
+
+asset DMP extends Profil {
+   --> Patient patient
+  o String[] Allergie
+  o String groupe_sanguin
+  o Boolean fumeur 
+  o Boolean alcoolique
+}
+
+abstract asset Historique identified by ID {
+  o String ID
+  --> Patient patient
+  --> Medecin medecin
+  o String Date
+}
+
+asset Consultation extends Historique{
+  o String Diagnostic
+  o String Prescription
+}
+
+asset Examen extends Historique {
+  o String Type
+  o String Nom
+  o String Resultat
+}
+
+abstract transaction Autorisation{
+	--> Patient patient
+    o String medecin
+}
+
+transaction Autorisation_Consultation extends Autorisation{
+    o String Acces default="Restreint" 
+}
+
+transaction Autorisation_Examen extends Autorisation{
+    o String type
+}
+
+transaction Autorisation_DMP extends Autorisation{	
+}
+
+transaction Ajouter_Patient{
+  o String[] autorisation_consultation
+  o String[] autorisation_Examen
+  o String[] Autorisation_DMP
+ } 
+
+transaction Ajouter_Medecin {
+ }
+
+transaction Creer_DMP{
+  --> Patient patient
+  o String Nom
+  o String Prenom
+  o String Email
+  o String Date_de_naissance
+  o String adresse
+  o String Num_mobile
+  o String[] Allergie
+  o String groupe_sanguin
+  o Boolean fumeur  
+  o Boolean alcoolique
+}
+
+transaction Creer_Profil_Medecin{
+  --> Medecin medecin
+  o String Nom
+  o String Prenom
+  o String Email
+  o String Date_de_naissance
+  o String adresse
+  o String Num_mobile
+  o String department
+  o String specialite
+
+}
+
+transaction Enregistrer_Consultation {
+  --> Patient patient
+  --> Medecin medecin
+  o String Date
+  o String Diagnostic
+  o String Prescription
+}
+
+transaction Enregistrer_Examen {
+  --> Patient patient
+  --> Medecin medecin
+  o String Date
+  o String Type
+  o String Nom
+  o String Resultat
+}
+
+abstract transaction Retirer_autorisation {
+   --> Patient patient
+  o String medecin
+}
+transaction Retirer_Autorisation_Consultation extends Retirer_autorisation {
+
+}
+
+transaction Retirer_Autorisation_Examen extends Retirer_autorisation {
+
+}
+
+transaction Retirer_Autorisation_DMP extends Retirer_autorisation {
+
+}

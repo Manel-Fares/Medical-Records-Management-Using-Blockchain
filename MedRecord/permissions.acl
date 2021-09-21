@@ -1,0 +1,183 @@
+
+rule SystemACL {
+    description:  "System ACL to permit all access"
+    participant: "org.hyperledger.composer.system.Participant"
+    operation: ALL
+    resource: "org.hyperledger.composer.system.**"
+    action: ALLOW
+}
+
+rule NetworkAdminUser {
+    description: "Grant business network administrators full access to user resources"
+    participant: "org.hyperledger.composer.system.NetworkAdmin"
+    operation: ALL
+    resource: "**"
+    action: ALLOW
+}
+
+rule NetworkAdminSystem {
+    description: "Grant business network administrators full access to system resources"
+    participant: "org.hyperledger.composer.system.NetworkAdmin"
+    operation: ALL
+    resource: "org.hyperledger.composer.system.**"
+    action: ALLOW
+}
+
+rule Update_Patient {
+  description: "donner l access update au proprietaire sur patient "
+  participant(t): "org.hyperledger.composer.system.Participant"
+  operation: UPDATE
+  resource(v): "org.hfn.dmp.Patient"
+  condition: (v.getIdentifier() == t.getIdentifier())
+  action: ALLOW
+}
+rule Revoke_Update_Patient {
+  description: "retirer l access update de non proprietaire sur patient "
+  participant(t): "org.hyperledger.composer.system.Participant"
+  operation: UPDATE
+  resource(v): "org.hfn.dmp.Patient"
+  condition: (v.getIdentifier() != t.getIdentifier())
+  action: DENY
+}
+
+rule Grant_Create_on_Transaction_to_Patient {
+  description: "donner l access create sur transaction au patient "
+  participant: "org.hfn.dmp.Patient"
+  operation: CREATE
+  resource: "org.hyperledger.composer.system.Transaction"
+  action: ALLOW
+}
+
+rule Revoke_Create_Update_from_Patient {
+  description: "retirer access create et update de patient "
+  participant: "org.hfn.dmp.Patient"
+  operation: CREATE , UPDATE
+  resource: "org.hfn.dmp.*"
+  action: DENY
+}
+
+rule Grant_Acces_To_Patient_On_Profil_Personnel {
+  description: "donner acces read au patient sur le profil de personnel qui figure dans une des liste des autorisation de patient"
+  participant(t): "org.hfn.dmp.Patient"
+  operation: READ
+  resource(v): "org.hfn.dmp.Profil_Medecin"
+  condition: ((t.autorisation_consultation.some(function (p) {
+        return p == v.personnel_medical.getIdentifier();  
+        } )) || (t.autorisation_Examen.some(function (p) {
+        return p == v.personnel_medical.getIdentifier();  
+        } )) || (t.Autorisation_DMP.some(function (p) {
+        return p == v.personnel_medical.getIdentifier();  
+        } )))
+  action: ALLOW
+}
+
+rule Acces_Profil_Personnel {
+  description: "le profil ne peut etre modifier que par son proprietaire"
+  participant(t): "org.hyperledger.composer.system.Participant"
+  operation: ALL
+  resource(v): "org.hfn.dmp.Profil_Medecin"
+  condition: (v.personnel_medical.getIdentifier() != t.getIdentifier())
+  action: DENY
+}
+
+rule Grant_Acess_On_Consultation_According_To_Access{
+   description: "filtre par ID"
+   participant(h): "org.hfn.dmp.Medecin"
+   operation: READ, UPDATE
+   resource(m): "org.hfn.dmp.Consultation"
+      condition:(	( m.patient.autorisation_consultation
+                 	 .some(function (p) {return p == h.getIdentifier(); }  )
+                 	 )
+                 &&
+  					((m.patient.autorisation_consultation[m.patient.autorisation_consultation
+                                                      .indexOf(h.getIdentifier())+1]=="Totale"))
+               						
+             	 ||  (m.medecin.getIdentifier()==h.getIdentifier())
+                
+                
+                )
+   action: ALLOW
+}
+
+rule Grant_Acess_On_Consultation{
+   description: "Seule les patients peuvent consulter et mettre à jour les consultations "
+   participant(h): "org.hfn.dmp.Patient"
+   operation: READ
+   resource(m): "org.hfn.dmp.Consultation"
+   condition: ( m.patient.getIdentifier() == h.getIdentifier() )
+   action: ALLOW
+}
+
+rule Grant_Acess_On_Examen_According_To_Type{
+   description: "Acces par type"
+   participant(h): "org.hfn.dmp.Medecin"
+   operation: READ, UPDATE
+   resource(m): "org.hfn.dmp.Examen"
+   condition:((m.patient.autorisation_Examen[m.patient.autorisation_Examen.indexOf(h.getIdentifier())+1]=="*")
+		   	&&(m.patient.autorisation_Examen.some(function (p) {
+       					 return p == h.getIdentifier();  
+       														 } 
+               )
+  )
+               						||
+               (m.patient.autorisation_Examen[m.patient.autorisation_Examen.indexOf(h.getIdentifier())+1]==m.Type)
+              &&(m.patient.autorisation_Examen.some(function (p) {
+    				    return p == h.getIdentifier();  
+        } )
+   ))
+   action: ALLOW
+}
+
+rule Grant_Acess_On_Examen{
+   description: "Seule les patients peuvent consulter et mettre à jour les Examens"
+   participant(h): "org.hfn.dmp.Patient"
+   operation: READ
+   resource(m): "org.hfn.dmp.Examen"
+   condition: ( m.patient.getIdentifier() == h.getIdentifier() )
+   action: ALLOW
+}
+
+rule Grant_Acess_On_DMP{
+   description: "Seule les personnels autorisées peuvent consulter et mettre à jour le dossier medical de patient"
+   participant(h): "org.hyperledger.composer.system.Participant"
+   operation: READ, UPDATE
+   resource(m): "org.hfn.dmp.DMP"
+   condition: ((m.patient.getIdentifier() == h.getIdentifier() )||
+(     m.patient.Autorisation_DMP.some(function (p) {
+        return p == h.getIdentifier();  
+        } ))
+   )
+   action: ALLOW
+}
+
+rule Acces_Consultation {
+  description: "les participants ne peuvent pas gerer les consultations "
+  participant: "org.hyperledger.composer.system.Participant"
+  operation: READ,UPDATE,DELETE
+  resource: "org.hfn.dmp.Consultation"
+  action: DENY
+}
+
+rule Acces_Examen {
+  description: "les participants ne peuvent gerer les Examens "
+  participant: "org.hyperledger.composer.system.Participant"
+  operation: READ,UPDATE,DELETE
+  resource: "org.hfn.dmp.Examen"
+  action: DENY
+}
+
+rule Acces_DMP {
+  description: "les participants ne peuvent pas gerer le DMP "
+  participant: "org.hyperledger.composer.system.Participant"
+  operation: READ,UPDATE,DELETE
+  resource: "org.hfn.dmp.DMP"
+  action: DENY
+}
+
+rule Rest {
+  description: "tout le monde peut creer lire et ecrire"
+  participant: "org.hfn.dmp.**"
+  operation: CREATE, READ , UPDATE
+  resource: "org.hfn.dmp.**" 
+  action: ALLOW
+}
